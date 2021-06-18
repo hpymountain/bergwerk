@@ -5,7 +5,7 @@ clean:
 	rm -rf tmp
 
 virtualenv:
-	virtualenv --prompt '|> braavos <| ' env
+	virtualenv --prompt '|> susis env <| ' env
 	env/bin/pip install -r requirements-dev.txt
 	@echo
 	@echo "VirtualENV Setup Complete. Now run: source env/bin/activate"
