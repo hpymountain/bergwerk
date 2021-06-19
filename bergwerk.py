@@ -16,20 +16,20 @@ def solve(mines, ores, available, unit_costs, unit_time_needed, work_hours, subs
 
     model.update()
 
-
-    # Menge jden erzes soll demand decken
+    # 1. Nebenbedingung:
+    # Menge jeden Erzes soll mindestens das Auftragsvolumen (demand) pro Erz decken.
     model.addConstrs((quicksum(x[m, o] for m in mines) >= demand[o]) for o in ores)
 
     # 2. Nebenbedingung:
-    # abgebaute menge nicht über available menge
+    # Abgebaute Menge darf die maximal vorhandene Menge (available) pro Mine und Erz nicht überschreiten.
     model.addConstrs((x[m, o] <= available[m, o]) for o in ores for m in mines)
 
     # 3. Nebenbedingung:
-    # Zeit pro Mine max.2/3 der work_hours
+    # Die Arbeitszeit darf pro Mine nur 2/3 ihrer maximalen Arbeitszeit (work_hours) betragen.
     model.addConstrs((quicksum(x[m, o] * unit_time_needed[m, o] for o in ores) <= (work_hours[m] * 2/3)) for m in mines)
 
     # 4. Nebenbedingung:
-    # 1/4 der abgebauten Erze müssen subventionierte Erze sein
+    # Pro Mine müssen 1/4 der abgebauten Erze subventionierte Erze sein.
     model.addConstrs((quicksum(x[m,o] for o in ores) / 4 <= quicksum(x[m,o] for o in subsidised_ores)) for m in mines)
 
     # optimize
