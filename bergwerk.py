@@ -7,37 +7,30 @@ def solve(mines, ores, available, unit_costs, unit_time_needed, work_hours, subs
 
     model = Model('bergwerk')
 
+    model.modelSense = GRB.MINIMIZE
+
     x = {}
     for m in mines:
         for o in ores:
-            x[m, o] = model.addVar(name=f'x_{m}_{o}')
-
-    model.modelSense = GRB.MINIMIZE
+            x[m, o] = model.addVar(obj = unit_costs[m, o], name=f'x_{m}_{o}')
 
     model.update()
 
-    # 1. Nebenbedingung:
-    # Zeit pro Mine max.2/3 der work_hours
-    model.addConstr(quicksum(unit_time_needed[ores] * x[ores] for o in ores)<= quicksum(2/3 * x[ores]*subsidised_ores[ores] for o in ores))
+
+    # Menge jden erzes soll demand decken
+    model.addConstrs((quicksum(x[m, o] for m in mines) >= demand[o]) for o in ores)
 
     # 2. Nebenbedingung:
-    # Von jedem Erz mind. Menge von demand abbauen
-    for o in ores:
-        x[ores] >= demand[ores] 
-     
-    # 3. Nebenbedingung: 
-    # Pro Mine nicht mehr als die verfügbare Menge abbauen
-    for m in mines:
-        x[mines] <= available[mines]
-    
-    # 4. Nebenbedingung: 
-    # Pro Erz nicht mehr als die verfügbare Menge abbauen
-    for o in ores:
-        x[ores] <= available[ores]
+    # abgebaute menge nicht über available menge
+    model.addConstrs((x[m, o] <= available[m, o]) for o in ores for m in mines)
 
-    # 5. Nebenbedingung:
+    # 3. Nebenbedingung:
+    # Zeit pro Mine max.2/3 der work_hours
+    model.addConstrs((quicksum(x[m, o] * unit_time_needed[m, o] for o in ores) <= (work_hours[m] * 2/3)) for m in mines)
+
+    # 4. Nebenbedingung:
     # 1/4 der abgebauten Erze müssen subventionierte Erze sein
-    model.addConstr(1/4 *quicksum(x[ores] for o in ores) <= quicksum(subsidised_ores[ores] * x[subsidised_ores] for o in ores))
+    model.addConstrs((quicksum(x[m,o] for o in ores) / 4 <= quicksum(x[m,o] for o in subsidised_ores)) for m in mines)
 
     # optimize
     model.optimize()
