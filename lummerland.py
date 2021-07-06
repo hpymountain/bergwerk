@@ -19,36 +19,20 @@ def solve(places, goods, travel_distance, costs, capacities, availabilities, dem
     # Variablen dem Modell bekannt machen.
     model.update()
 
-    # bedarf decken
+    # Bedarf decken
     model.addConstrs(quicksum(x[g, p, q] for p in places) >= demands[q, g] for q in places for g in goods)
 
-    # Vierte Nebenbedingung (falls noetig):
-    # kapazität checken
+    # Kapazität checken
     model.addConstrs(availabilities[p, g] >= quicksum(x[g, p, q] for q in places) for p in places for g in goods)
-    # Ungleichung: ...
 
-
-
-
-    # Erste Nebenbedingung:
     # Bedeutung: Es muss von einem Gut immer mehr oder gleich viel vorhanden sein, als/wie benötigt wird.
     model.addConstrs((quicksum(availabilities[p, g] for p in places) >= quicksum(demands[p, g] for p in places)) for g in goods)
 
-
-    # Zweite Nebenbedingung (falls noetig):
-    # insgesamt können höchstens capacities[p, q] Chargen von Ort p zu Ort q transportiert werden.
+    # Insgesamt können höchstens capacities[p, q] Chargen von Ort p zu Ort q transportiert werden.
     model.addConstrs(quicksum(x[g, p, q] for g in goods) <= capacities[p, q] for p in places for q in places)
 
-
-    # Dritte Nebenbedingung (falls noetig):
     # max travel nicht überschreiten
     model.addConstr(quicksum(quicksum(x[g, p, q] for g in goods) * travel_distance[p, q] for p in places for q in places) <= max_travel)
-
-
-
-    # Fuenfte Nebenbedingung (falls noetig):
-    # Bedeutung: ...
-    # Ungleichung: ...
 
     # Nebenbedingungen hinzugefuegt? LP loesen lassen!
     model.optimize()
